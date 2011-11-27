@@ -1,6 +1,6 @@
 Name:           maven-help-plugin
 Version:        2.1.1
-Release:        2
+Release:        4
 Summary:        Plugin to to get relative information about a project or the system
 
 Group:          Development/Java
