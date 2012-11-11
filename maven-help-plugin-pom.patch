@@ -1,0 +1,22 @@
+--- pom.xml.orig	2010-06-02 17:00:49.233157632 +0800
++++ pom.xml	2010-06-02 17:01:35.958054368 +0800
+@@ -190,6 +190,19 @@
+           </execution>
+         </executions>
+       </plugin>
++      <plugin>
++        <groupId>org.apache.maven.plugins</groupId>
++        <artifactId>maven-plugin-plugin</artifactId>
++        <version>2.6</version>
++        <executions>
++          <execution>
++            <id>generated-helpmojo</id>
++            <goals>
++              <goal>helpmojo</goal>
++            </goals>
++          </execution>
++        </executions>
++      </plugin>
+     </plugins>
+   </build>
+ 
