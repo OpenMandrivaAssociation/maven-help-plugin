@@ -1,55 +1,52 @@
+%{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-help-plugin
-Version:        2.1.1
-Release:        4
+Version:        2.2
+Release:        2.0%{?dist}
 Summary:        Plugin to to get relative information about a project or the system
 
-Group:          Development/Java
+
 License:        ASL 2.0
 URL:            http://maven.apache.org/plugins/maven-help-plugin/
-# svn export http://svn.apache.org/repos/asf/maven/plugins/tags/maven-help-plugin-2.1.1/
-# tar jcf maven-help-plugin-2.1.1.tar.bz2 maven-help-plugin-2.1.1
-Source0:        %{name}-%{version}.tar.bz2
-Source1:        %{name}-jpp-depmap.xml
-Patch0:         %{name}-pom.patch
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
+Source0:        http://repo2.maven.org/maven2/org/apache/maven/plugins/%{name}/%{version}/%{name}-%{version}-source-release.zip
+Patch0:         maven3-api-fixes.patch
+Patch1:         reduce-exception.patch
 BuildArch: noarch
 
-BuildRequires: java-devel >= 0:1.6.0
+BuildRequires: java-devel >= 1:1.6.0
 BuildRequires: plexus-utils
-BuildRequires: ant-nodeps
-BuildRequires: maven2
+BuildRequires: ant
+BuildRequires: junit-addons
+BuildRequires: maven-local
 BuildRequires: maven-install-plugin
-BuildRequires: maven-compiler-plugin
 BuildRequires: maven-plugin-plugin
 BuildRequires: maven-resources-plugin
-BuildRequires: maven-surefire-maven-plugin
-BuildRequires: maven-surefire-provider-junit
+BuildRequires: maven-surefire-plugin
 BuildRequires: maven-plugin-testing-harness
 BuildRequires: maven-jar-plugin
 BuildRequires: maven-javadoc-plugin
 BuildRequires: xstream
 BuildRequires: jpackage-utils
-Requires: ant-nodeps
-Requires: maven2
+BuildRequires: plexus-containers-component-metadata
+BuildRequires: maven-plugin-tools-generators
+Requires: ant
+Requires: maven
 Requires: jpackage-utils
 Requires: java
 Requires: xstream
-Requires(post): jpackage-utils
-Requires(postun): jpackage-utils 
+Requires: maven-plugin-tools-generators
 
 Obsoletes: maven2-plugin-help < 0:%{version}-%{release}
 Provides: maven2-plugin-help = 0:%{version}-%{release}
 
 %description
 The Maven Help Plugin is used to get relative information about a project
- or the system. It can be used to get a description of a particular plugin, 
+or the system. It can be used to get a description of a particular plugin,
 including the plugin's mojos with their parameters and component requirements,
-the effective POM and effective settings of the current build, 
+the effective POM and effective settings of the current build,
 and the profiles applied to the current project being built.
 
 %package javadoc
-Group:          Development/Java
+
 Summary:        Javadoc for %{name}
 Requires: jpackage-utils
 
@@ -58,62 +55,96 @@ API documentation for %{name}.
 
 
 %prep
-%setup -q #You may need to update this according to your Source0
-%patch0 -b .sav
+%setup -q
+%patch0 -b.maven3-api-fixes
+%patch1 -b.reduce-exception
+
+# Use compatibility API
+%pom_remove_dep org.apache.maven:maven-plugin-parameter-documenter
+%pom_add_dep org.apache.maven:maven-compat
+
+# Add missing test deps
+%pom_add_dep net.sf.cglib:cglib:any:test
+
+# In newer versions of maven-plugin-tools the PluginUtils.toText()
+# static method was moved to GeneratorUtils class.
+%pom_add_dep org.apache.maven.plugin-tools:maven-plugin-tools-generators
+sed -i "s|PluginUtils.toText|org.apache.maven.tools.plugin.generator.GeneratorUtils.toText|" \
+    src/main/java/org/apache/maven/plugins/help/DescribeMojo.java
 
 %build
-export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
-
-# no junit-addons, skip test
-mvn-jpp \
-        -e \
-        -Dmaven2.jpp.mode=true \
-        -Dmaven2.jpp.depmap.file=%{SOURCE1} \
-        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
-        -Dmaven.test.skip=true \
-        -Dmaven.test.failure.ignore=true \
+# Skip tests, there is some kind of dependency injection failure in one of them
+mvn-rpmbuild -DskipTests=true \
         install javadoc:javadoc
 
 %install
-rm -rf %{buildroot}
-
 # jars
 install -d -m 0755 %{buildroot}%{_javadir}
-install -m 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/%{name}-%{version}.jar
-
-(cd %{buildroot}%{_javadir} && for jar in *-%{version}*; \
-    do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
-
-%add_to_maven_depmap org.apache.maven.plugins %{name} %{version} JPP %{name}
+install -m 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/%{name}.jar
 
 # poms
 install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -pm 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
+install -pm 644 pom.xml %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
+
+%add_maven_depmap JPP-%{name}.pom %{name}.jar
 
 # javadoc
-install -d -m 0755 %{buildroot}%{_javadocdir}/%{name}-%{version}
-cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/%{name}-%{version}/
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name}
-rm -rf target/site/api*
-
-%post
-%update_maven_depmap
-
-%postun
-%update_maven_depmap
-
-%clean
-rm -rf %{buildroot}
+install -d -m 0755 %{buildroot}%{_javadocdir}/%{name}
+cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/%{name}/
 
 %files
-%defattr(-,root,root,-)
+%doc LICENSE NOTICE
 %{_javadir}/*
 %{_mavenpomdir}/*
 %{_mavendepmapfragdir}/*
 
 %files javadoc
-%defattr(-,root,root,-)
-%{_javadocdir}/%{name}-%{version}
+%doc LICENSE NOTICE
 %{_javadocdir}/%{name}
 
+%changelog
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Mon Jul 15 2013 Mat Booth <fedora@matbooth.co.uk> - 2.2-1
+- Update to latest upstream, fixes rhbz #915220
+- Drop upstreamed plexus-containers-component-metadata patch
+- No longer need missing package declaration workaround for HelpMojo.java
+
+* Wed Apr 10 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 2.1.1-11
+- Remove test dependencies from POM
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.1-10
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Wed Feb 06 2013 Java SIG <java-devel@lists.fedoraproject.org> - 2.1.1-9
+- Update for https://fedoraproject.org/wiki/Fedora_19_Maven_Rebuild
+- Replace maven BuildRequires with maven-local
+
+* Mon Jan  7 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 2.1.1-8
+- Install license files, resolves: rhbz#879368
+- Fix HelpMojo.java package declaration
+- Add patch for compatibility with maven-plugin-tools-3.x
+
+* Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.1-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Mon Apr 30 2012 Jaromir Capik <jcapik@redhat.com> 2.1.1-6
+- Migration from plexus-maven-plugin to plexus-containers-component-metadata
+
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.1-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Tue Dec 6 2011 Alexander Kurtakov <akurtako@redhat.com> 2.1.1-4
+- Fix build in pure maven 3 environment.
+
+* Thu Jun 9 2011 Alexander Kurtakov <akurtako@redhat.com> 2.1.1-3
+- Build with maven 3.x.
+- Use upstream sources.
+- Guidelines fixes.
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Wed Jun 02 2010 Yong Yang <yyang@redhat.com> 2.1.1-1
+- Initial package.

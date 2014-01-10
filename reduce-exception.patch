@@ -1,0 +1,13 @@
+--- src/main/java/org/apache/maven/plugins/help/DescribeMojo.java.orig	2013-02-20 20:39:48.000000000 +0000
++++ src/main/java/org/apache/maven/plugins/help/DescribeMojo.java	2013-07-15 15:00:41.534021540 +0100
+@@ -909,10 +909,6 @@
+             {
+                 throw new MojoFailureException( "ComponentLookupException: " + e.getMessage() );
+             }
+-            catch ( LifecycleExecutionException e )
+-            {
+-                throw new MojoFailureException( "LifecycleExecutionException: " + e.getMessage() );
+-            }
+ 
+             return false;
+         }
