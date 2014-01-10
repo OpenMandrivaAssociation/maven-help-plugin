@@ -56,8 +56,8 @@ API documentation for %{name}.
 
 %prep
 %setup -q
-%patch0 -b.maven3-api-fixes
-%patch1 -b.reduce-exception
+%patch0
+%patch1
 
 # Use compatibility API
 %pom_remove_dep org.apache.maven:maven-plugin-parameter-documenter
