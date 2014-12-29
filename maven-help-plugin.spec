@@ -1,9 +1,9 @@
 %{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-help-plugin
 Version:        2.2
-Release:        2.0%{?dist}
+Release:        6.1
 Summary:        Plugin to to get relative information about a project or the system
-
+Group:		Development/Java
 
 License:        ASL 2.0
 URL:            http://maven.apache.org/plugins/maven-help-plugin/
@@ -34,9 +34,6 @@ Requires: jpackage-utils
 Requires: java
 Requires: xstream
 Requires: maven-plugin-tools-generators
-
-Obsoletes: maven2-plugin-help < 0:%{version}-%{release}
-Provides: maven2-plugin-help = 0:%{version}-%{release}
 
 %description
 The Maven Help Plugin is used to get relative information about a project
@@ -73,34 +70,16 @@ sed -i "s|PluginUtils.toText|org.apache.maven.tools.plugin.generator.GeneratorUt
     src/main/java/org/apache/maven/plugins/help/DescribeMojo.java
 
 %build
-# Skip tests, there is some kind of dependency injection failure in one of them
-mvn-rpmbuild -DskipTests=true \
-        install javadoc:javadoc
+%mvn_build -f
 
 %install
-# jars
-install -d -m 0755 %{buildroot}%{_javadir}
-install -m 644 target/%{name}-%{version}.jar   %{buildroot}%{_javadir}/%{name}.jar
+%mvn_install
 
-# poms
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -pm 644 pom.xml %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
-
-%add_maven_depmap JPP-%{name}.pom %{name}.jar
-
-# javadoc
-install -d -m 0755 %{buildroot}%{_javadocdir}/%{name}
-cp -pr target/site/api*/* %{buildroot}%{_javadocdir}/%{name}/
-
-%files
+%files -f .mfiles
 %doc LICENSE NOTICE
-%{_javadir}/*
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
 
-%files javadoc
+%files javadoc -f .mfiles-javadoc
 %doc LICENSE NOTICE
-%{_javadocdir}/%{name}
 
 %changelog
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.2-2
