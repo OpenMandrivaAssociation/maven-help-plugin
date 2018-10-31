@@ -1,7 +1,7 @@
 %{?_javapackages_macros:%_javapackages_macros}
 Name:           maven-help-plugin
 Version:        2.2
-Release:        6.2
+Release:        6.3
 Summary:        Plugin to to get relative information about a project or the system
 Group:		Development/Java
 
