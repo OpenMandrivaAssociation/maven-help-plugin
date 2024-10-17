@@ -6,7 +6,7 @@ Summary:        Plugin to to get relative information about a project or the sys
 Group:		Development/Java
 
 License:        ASL 2.0
-URL:            http://maven.apache.org/plugins/maven-help-plugin/
+URL:            https://maven.apache.org/plugins/maven-help-plugin/
 Source0:        http://repo2.maven.org/maven2/org/apache/maven/plugins/%{name}/%{version}/%{name}-%{version}-source-release.zip
 Patch0:         maven3-api-fixes.patch
 Patch1:         reduce-exception.patch
