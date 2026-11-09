@@ -1,2 +1,4 @@
 sources:
+  maven-help-plugin-3.5.2.tar.gz: c2ee13be30ba53746a757b12c1db6a7dc323a585
+removed_sources:
   maven-help-plugin-2.2-source-release.zip: 2a47cd44916fa3e77f5219b21f080460dd11492e
